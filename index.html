@@ -1,0 +1,592 @@
+﻿
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Máy Kết Sổ Quán Ăn</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 16px 10px 40px;
+  font-family: Arial, sans-serif;
+  background: #f4f6fa;
+  color: #202938;
+}
+.app {
+  max-width: 470px;
+  margin: auto;
+  padding: 16px;
+  background: white;
+  border: 1px solid #e1e5ec;
+  border-radius: 18px;
+}
+h2 { text-align: center; font-size: 19px; }
+small { color: #667085; }
+.center { text-align: center; }
+.tabs { display: flex; gap: 6px; margin: 16px 0; }
+.tabs button { flex: 1; }
+button {
+  padding: 11px;
+  border: 1px solid #d7dce5;
+  border-radius: 9px;
+  background: #f0f2f6;
+  cursor: pointer;
+}
+button.active { background: #dbeafe; }
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin: 13px 0;
+}
+input {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 8px;
+  border: 1px solid #d5dbe5;
+  border-radius: 8px;
+  font-size: 15px;
+}
+input:focus { outline: 2px solid #9bbcf9; }
+.money { width: 140px; }
+.pair { display: flex; align-items: center; gap: 8px; }
+.pair input { width: 83px; }
+.food {
+  padding: 10px 0;
+  border-bottom: 1px solid #e6eaf0;
+}
+.food-title { font-weight: bold; }
+.subtext { color: #667085; font-size: 12px; margin-top: 4px; }
+.summary {
+  background: #f1f4f8;
+  padding: 5px 13px;
+  border-radius: 12px;
+  margin: 17px 0;
+}
+.amount { font-weight: bold; font-size: 18px; }
+.expenses {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 116px;
+  gap: 8px;
+  margin: 12px 0;
+}
+.expenses input { font-size: 14px; }
+.result {
+  background: #f1f4f8;
+  text-align: center;
+  padding: 18px;
+  border-radius: 12px;
+  margin: 15px 0;
+}
+.result b { display: block; font-size: 24px; margin-top: 7px; }
+.good { color: green; }
+.bad { color: #c32c36; }
+.primary {
+  width: 100%;
+  background: #1769e0;
+  color: white;
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  margin-top: 12px;
+}
+.history-card {
+  border: 1px solid #dfe4eb;
+  padding: 13px;
+  border-radius: 12px;
+  margin: 12px 0;
+}
+.history-card .row { font-size: 13px; }
+.hidden { display: none; }
+.invalid { border-color: red; background: #fff5f5; }
+hr { border: 0; border-top: 1px solid #e6eaf0; margin: 18px 0; }
+</style>
+</head>
+
+<body>
+<div class="app">
+  <h2>🧮 MÁY KẾT SỔ QUÁN ĂN</h2>
+  <div class="center"><small>Đơn vị tiền: 1.000đ</small></div>
+
+  <div class="tabs">
+    <button id="tabCalc" class="active" onclick="showTab('calc')">Kết sổ</button>
+    <button id="tabHistory" onclick="showTab('history')">Lịch sử</button>
+  </div>
+
+  <section id="calc">
+    <div class="row">
+      <b>Tiền quỹ</b>
+      <input class="money" id="fund" type="number" placeholder="VD: 1000">
+    </div>
+
+    <div id="foods"></div>
+
+    <div class="row">
+      <b>Đồ ăn thêm</b>
+      <input class="money" id="extra" type="number" placeholder="Số tiền (k)">
+    </div>
+
+    <div class="row">
+      <div><b>Khăn</b><div class="subtext">2k / cái</div></div>
+      <input class="money" id="towel" type="number" placeholder="Số lượng">
+    </div>
+
+    <div class="row">
+      <div><b>Trà đá</b><div class="subtext">2k / ly</div></div>
+      <input class="money" id="tea" type="number" placeholder="Số lượng">
+    </div>
+
+    <div class="summary">
+      <div class="row"><b>Tổng tiền</b><span class="amount" id="total">0k</span></div>
+      <div class="row"><b>Tổng ngày</b><span class="amount" id="day">0k</span></div>
+    </div>
+
+    <div class="row">
+      <b>Chuyển khoản</b>
+      <input class="money" id="transfer" type="number" placeholder="Số tiền (k)">
+    </div>
+
+    <div class="row">
+      <b>App</b>
+      <input class="money" id="appMoney" type="number" placeholder="Số tiền (k)">
+    </div>
+
+    <h4>CHI (6 KHOẢN)</h4>
+    <div class="expenses" id="expenses"></div>
+    <div class="row"><small>Tổng chi</small><b id="spent">0k</b></div>
+
+    <hr>
+
+    <div class="summary">
+      <div class="row">
+        <b>Tiền dự kiến</b>
+        <span class="amount" id="expected">0k</span>
+      </div>
+      <div class="subtext">Tổng tiền − Chuyển khoản − App − Tổng chi</div>
+      <div style="height:8px"></div>
+    </div>
+
+    <div class="row">
+      <b>Tiền thực tế</b>
+      <input class="money" id="actual" type="number" placeholder="Tiền đếm (k)">
+    </div>
+
+    <div class="result hidden" id="result">
+      <small>KẾT QUẢ ĐỐI CHIẾU</small>
+      <b id="difference"></b>
+    </div>
+
+    <button class="primary" onclick="saveClosing()">💾 Lưu kết sổ</button>
+    <button style="width:100%;margin-top:10px" onclick="clearForm()">Xóa ô nhập để kết sổ mới</button>
+  </section>
+
+  <section id="history" class="hidden">
+    <button onclick="exportHistory()">Xuất bản sao lưu JSON</button>
+    <div id="historyList"></div>
+  </section>
+
+  <p class="center"><small>Dữ liệu lưu trên trình duyệt của thiết bị này. Hãy sao lưu định kỳ.</small></p>
+</div>
+
+<script>
+"use strict";
+
+const FOODS = [
+  { name: "Bún 35", price: 35, subtract: true },
+  { name: "Bún 50", price: 50, subtract: false },
+  { name: "Bánh hỏi 40", price: 40, subtract: true },
+  { name: "Bánh hỏi 55", price: 55, subtract: false }
+];
+
+const HISTORY_KEY = "mayKetSoHistoryV1";
+const DRAFT_KEY = "mayKetSoDraftV1";
+
+const $ = id => document.getElementById(id);
+
+const fmt = value =>
+  Number(value).toLocaleString("vi-VN", {
+    maximumFractionDigits: 2
+  });
+
+function num(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? Math.max(0, n) : 0;
+}
+
+// Ô A của Bún 35 và Bánh hỏi 40 được nhập phép trừ.
+function parseA(text, allowSubtract) {
+  const s = String(text).trim();
+
+  if (s === "") return { value: 0, valid: true };
+
+  if (!allowSubtract) {
+    const v = Number(s);
+    return {
+      value: Number.isFinite(v) && v >= 0 ? v : 0,
+      valid: Number.isFinite(v) && v >= 0
+    };
+  }
+
+  if (!/^\d+(\.\d+)?(\s*-\s*\d+(\.\d+)?)*$/.test(s)) {
+    return { value: 0, valid: false };
+  }
+
+  const parts = s.split("-").map(x => Number(x.trim()));
+  const result = parts.slice(1).reduce(
+    (a, b) => a - b,
+    parts[0]
+  );
+
+  return { value: result, valid: result >= 0 };
+}
+
+// Tạo bốn dòng món ăn.
+FOODS.forEach((food, i) => {
+  const box = document.createElement("div");
+  box.className = "food";
+
+  box.innerHTML = `
+    <div class="row">
+      <div>
+        <div class="food-title">${food.name}</div>
+        <div class="subtext">${food.price}k / phần</div>
+      </div>
+      <div class="pair">
+        <input id="a${i}"
+          type="${food.subtract ? "text" : "number"}"
+          placeholder="${food.subtract ? "A: 80-25" : "A"}">
+        <b>+</b>
+        <input id="b${i}" type="number" placeholder="B">
+      </div>
+    </div>
+    <div class="subtext" id="detail${i}"></div>
+    <div class="row">
+      <small id="count${i}">Thành tiền (0 phần)</small>
+      <b id="amount${i}">0k</b>
+    </div>
+  `;
+
+  $("foods").appendChild(box);
+});
+
+// Tạo sáu khoản chi.
+for (let i = 0; i < 6; i++) {
+  const note = document.createElement("input");
+  note.id = "note" + i;
+  note.placeholder = "Chi " + (i + 1) + " - Nội dung";
+
+  const money = document.createElement("input");
+  money.id = "expense" + i;
+  money.type = "number";
+  money.placeholder = "Tiền (k)";
+
+  $("expenses").append(note, money);
+}
+
+const fieldIds = [
+  "fund", "extra", "towel", "tea",
+  "transfer", "appMoney", "actual",
+  ...FOODS.flatMap((f, i) => ["a" + i, "b" + i]),
+  ...Array.from({ length: 6 }, (_, i) => [
+    "note" + i, "expense" + i
+  ])
+];
+
+function getFields() {
+  const obj = {};
+  fieldIds.forEach(id => obj[id] = $(id).value);
+  return obj;
+}
+
+function restoreDraft() {
+  try {
+    const draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "{}");
+    fieldIds.forEach(id => {
+      if (typeof draft[id] === "string") {
+        $(id).value = draft[id];
+      }
+    });
+  } catch (error) {
+    console.warn("Không đọc được bản nháp", error);
+  }
+}
+
+// Hàm tính toán chính.
+function calculate() {
+  let valid = true;
+
+  const lines = FOODS.map((food, i) => {
+    const rawA = $("a" + i).value;
+    const rawB = $("b" + i).value;
+    const a = parseA(rawA, food.subtract);
+    const b = num(rawB);
+
+    $("a" + i).classList.toggle("invalid", !a.valid);
+    if (!a.valid) valid = false;
+
+    $("detail" + i).textContent =
+      food.subtract && rawA.includes("-")
+        ? (a.valid
+            ? "A = " + fmt(a.value) + " phần"
+            : "Phép trừ không hợp lệ")
+        : "";
+
+    const portions = a.value + b;
+    const amount = portions * food.price;
+
+    $("count" + i).textContent =
+      "Thành tiền (" + fmt(portions) + " phần)";
+    $("amount" + i).textContent = fmt(amount) + "k";
+
+    return {
+      name: food.name,
+      rawA, rawB,
+      a: a.value,
+      b,
+      portions,
+      amount
+    };
+  });
+
+  const fund = num($("fund").value);
+  const extra = num($("extra").value);
+  const towel = num($("towel").value);
+  const tea = num($("tea").value);
+  const transfer = num($("transfer").value);
+  const app = num($("appMoney").value);
+
+  const expenses = Array.from({ length: 6 }, (_, i) => ({
+    note: $("note" + i).value,
+    amount: num($("expense" + i).value)
+  }));
+
+  const spent = expenses.reduce(
+    (sum, item) => sum + item.amount, 0
+  );
+
+  const foodTotal = lines.reduce(
+    (sum, item) => sum + item.amount, 0
+  );
+
+  const total = fund + foodTotal + extra + towel * 2 + tea * 2;
+  const day = total - fund;
+  const expected = total - transfer - app - spent;
+
+  const actual = $("actual").value === ""
+    ? null
+    : num($("actual").value);
+
+  const diff = actual === null ? null : actual - expected;
+
+  $("total").textContent = fmt(total) + "k";
+  $("day").textContent = fmt(day) + "k";
+  $("spent").textContent = fmt(spent) + "k";
+  $("expected").textContent = fmt(expected) + "k";
+
+  $("result").classList.toggle("hidden", diff === null);
+
+  if (diff !== null) {
+    const result = $("difference");
+
+    result.textContent = diff === 0
+      ? "Vừa đủ"
+      : diff > 0
+        ? "Dư " + fmt(diff) + "k"
+        : "Thiếu " + fmt(-diff) + "k";
+
+    result.className = diff === 0
+      ? "good"
+      : diff < 0 ? "bad" : "";
+  }
+
+  return {
+    valid, lines, fund, extra, towel, tea,
+    transfer, app, expenses, spent,
+    total, day, expected, actual, diff
+  };
+}
+
+function loadHistory() {
+  try {
+    const data = JSON.parse(
+      localStorage.getItem(HISTORY_KEY) || "[]"
+    );
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+function showTab(tab) {
+  $("calc").classList.toggle("hidden", tab !== "calc");
+  $("history").classList.toggle("hidden", tab !== "history");
+  $("tabCalc").classList.toggle("active", tab === "calc");
+  $("tabHistory").classList.toggle("active", tab === "history");
+
+  if (tab === "history") renderHistory();
+}
+
+function addRow(parent, label, value) {
+  const row = document.createElement("div");
+  row.className = "row";
+
+  const left = document.createElement("span");
+  left.textContent = label;
+
+  const right = document.createElement("b");
+  right.textContent = value;
+
+  row.append(left, right);
+  parent.appendChild(row);
+}
+
+function renderHistory() {
+  const list = $("historyList");
+  list.replaceChildren();
+
+  const history = loadHistory();
+
+  if (history.length === 0) {
+    list.textContent = "Chưa có bản kết sổ nào.";
+    return;
+  }
+
+  history.forEach(h => {
+    const card = document.createElement("div");
+    card.className = "history-card";
+
+    addRow(
+      card,
+      new Date(h.savedAt).toLocaleString("vi-VN"),
+      h.diff === null
+        ? "Chưa đối chiếu"
+        : h.diff === 0
+          ? "Vừa đủ"
+          : h.diff > 0
+            ? "Dư " + fmt(h.diff) + "k"
+            : "Thiếu " + fmt(-h.diff) + "k"
+    );
+
+    addRow(card, "Tổng tiền", fmt(h.total) + "k");
+    addRow(card, "Tổng ngày", fmt(h.day) + "k");
+    addRow(card, "Tiền dự kiến", fmt(h.expected) + "k");
+    addRow(
+      card, "Tiền thực tế",
+      h.actual === null ? "Chưa nhập" : fmt(h.actual) + "k"
+    );
+
+    const details = document.createElement("details");
+    const summary = document.createElement("summary");
+    summary.textContent = "Xem chi tiết";
+    details.appendChild(summary);
+
+    h.lines.forEach(line => {
+      addRow(
+        details,
+        line.name + " (" + (line.rawA || 0) +
+          " + " + (line.rawB || 0) + ")",
+        fmt(line.amount) + "k"
+      );
+    });
+
+    addRow(details, "Tiền quỹ", fmt(h.fund) + "k");
+    addRow(details, "Đồ ăn thêm", fmt(h.extra) + "k");
+    addRow(details, "Khăn / Trà đá", h.towel + " / " + h.tea);
+    addRow(details, "Chuyển khoản", fmt(h.transfer) + "k");
+    addRow(details, "App", fmt(h.app) + "k");
+    addRow(details, "Tổng chi", fmt(h.spent) + "k");
+
+    h.expenses.forEach(e => {
+      if (e.note || e.amount) {
+        addRow(details, e.note || "Khoản chi", fmt(e.amount) + "k");
+      }
+    });
+
+    card.appendChild(details);
+    list.appendChild(card);
+  });
+}
+
+function saveClosing() {
+  const data = calculate();
+
+  if (!data.valid) {
+    alert("Em kiểm tra lại phép trừ ở ô A nhé.");
+    return;
+  }
+
+  try {
+    const history = loadHistory();
+    history.unshift({
+      ...data,
+      savedAt: new Date().toISOString()
+    });
+
+    localStorage.setItem(
+      HISTORY_KEY,
+      JSON.stringify(history)
+    );
+
+    showTab("history");
+  } catch {
+    alert("Không lưu được lịch sử trên trình duyệt này.");
+  }
+}
+
+function clearForm() {
+  if (!confirm("Xóa ô nhập để kết sổ mới? Lịch sử vẫn giữ.")) {
+    return;
+  }
+
+  fieldIds.forEach(id => $(id).value = "");
+
+  try {
+    localStorage.removeItem(DRAFT_KEY);
+  } catch {}
+
+  calculate();
+  window.scrollTo(0, 0);
+}
+
+function exportHistory() {
+  const content = JSON.stringify({
+    exportedAt: new Date().toISOString(),
+    history: loadHistory()
+  }, null, 2);
+
+  const blob = new Blob([content], {
+    type: "application/json"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = "may-ket-so-sao-luu.json";
+  link.click();
+
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// Tự tính và tự lưu khi nhập.
+document.querySelectorAll("input").forEach(input => {
+  input.addEventListener("input", () => {
+    calculate();
+
+    try {
+      localStorage.setItem(
+        DRAFT_KEY,
+        JSON.stringify(getFields())
+      );
+    } catch {}
+  });
+});
+
+restoreDraft();
+calculate();
+</script>
+</body>
+</html>
